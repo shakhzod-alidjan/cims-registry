@@ -33,7 +33,6 @@ docker compose exec web python manage.py createsuperuser
 
 # 6. Создать объекты (Sites) через Admin
 # Открыть: http://localhost/admin/
-# Sites → Add: HQ, MMG, AGG, CityMakon, K-Tungsten, Карасай
 
 # 7. (опционально) Импортировать данные из Excel
 docker compose exec web python manage.py import_excel /app/data/Corporate_BP_Registry.xlsx
@@ -96,17 +95,6 @@ python manage.py import_excel data/registry.xlsx --dry-run
 ```
 
 ---
-
-## Структура объектов (Sites)
-
-| Код | Название | Описание |
-|-----|----------|----------|
-| hq | HQ | Главный офис, Ташкент |
-| mmg | MMG | Объект MMG |
-| agg | AGG | Объект AGG |
-| cm | CityMakon | CityMakon |
-| kt | K-Tungsten | K-Tungsten |
-| kar | Карасай | Карасай объект |
 
 Добавить новый объект: Django Admin → Core → Sites → Add.
 
