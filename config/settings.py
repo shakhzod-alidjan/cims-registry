@@ -175,3 +175,5 @@ if not DEBUG:
     # CSRF_COOKIE_SECURE = True
     # SECURE_HSTS_SECONDS = 31536000
     # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+CSRF_TRUSTED_ORIGINS = ['https://cims.multinationalminegroup.com', 'http://172.16.15.1']

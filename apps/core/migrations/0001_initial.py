@@ -1,58 +1,65 @@
 from django.db import migrations, models
+import django.contrib.auth.models
+import django.contrib.auth.validators
 import django.db.models.deletion
-
+import django.utils.timezone
 
 class Migration(migrations.Migration):
-
     initial = True
-
     dependencies = [
-        ('core', '0001_initial'),
+        ('auth', '0012_alter_user_first_name_max_length'),
     ]
-
     operations = [
         migrations.CreateModel(
-            name='CloudProvider',
+            name='Site',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200, verbose_name='Провайдер')),
-                ('contact_email', models.EmailField(blank=True, verbose_name='Email')),
-                ('billing_url', models.URLField(blank=True, verbose_name='Биллинг URL')),
-                ('notes', models.TextField(blank=True, verbose_name='Примечания')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('name', models.CharField(max_length=100, unique=True)),
+                ('code', models.SlugField(max_length=20, unique=True)),
+                ('color', models.CharField(default='#0052CC', max_length=7)),
+                ('description', models.TextField(blank=True)),
+                ('is_active', models.BooleanField(default=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-                'verbose_name': 'Cloud-провайдер',
-                'verbose_name_plural': 'Cloud-провайдеры',
-                'ordering': ['name'],
-            },
+            options={'verbose_name': 'Объект', 'ordering': ['name']},
         ),
         migrations.CreateModel(
-            name='CloudServer',
+            name='User',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('server_type', models.CharField(choices=[('vps', 'VPS'), ('dedicated', 'Dedicated'), ('managed_db', 'Managed Database'), ('s3', 'Object Storage (S3)'), ('function', 'Serverless / Function'), ('other', 'Другое')], default='vps', max_length=20, verbose_name='Тип')),
-                ('name', models.CharField(max_length=200, verbose_name='Имя сервера')),
-                ('cpu', models.CharField(blank=True, max_length=50, verbose_name='CPU')),
-                ('ram_gb', models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='RAM (GB)')),
-                ('disk_gb', models.PositiveIntegerField(blank=True, null=True, verbose_name='Диск (GB)')),
-                ('disk_type', models.CharField(choices=[('ssd', 'SSD'), ('hdd', 'HDD'), ('nvme', 'NVMe')], default='ssd', max_length=10, verbose_name='Тип диска')),
-                ('os', models.CharField(blank=True, max_length=100, verbose_name='ОС')),
-                ('ip_address', models.GenericIPAddressField(blank=True, null=True, verbose_name='IP адрес')),
-                ('purpose', models.CharField(blank=True, max_length=300, verbose_name='Назначение')),
-                ('status', models.CharField(choices=[('active', 'Активен'), ('stopped', 'Остановлен')], default='active', max_length=20, verbose_name='Статус')),
-                ('cost_usd', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Стоимость / мес (USD)')),
-                ('billing_period', models.CharField(choices=[('monthly', 'Ежемесячно'), ('yearly', 'Ежегодно')], default='monthly', max_length=20, verbose_name='Период оплаты')),
-                ('next_payment', models.DateField(blank=True, null=True, verbose_name='Следующий платёж')),
-                ('notes', models.TextField(blank=True, verbose_name='Примечания')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('provider', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='servers', to='cloud.cloudprovider', verbose_name='Провайдер')),
-                ('site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cloud_servers', to='core.site', verbose_name='Объект')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('password', models.CharField(max_length=128)),
+                ('last_login', models.DateTimeField(blank=True, null=True)),
+                ('is_superuser', models.BooleanField(default=False)),
+                ('username', models.CharField(max_length=150, unique=True)),
+                ('first_name', models.CharField(blank=True, max_length=150)),
+                ('last_name', models.CharField(blank=True, max_length=150)),
+                ('email', models.EmailField(blank=True)),
+                ('is_staff', models.BooleanField(default=False)),
+                ('is_active', models.BooleanField(default=True)),
+                ('date_joined', models.DateTimeField(default=django.utils.timezone.now)),
+                ('role', models.CharField(choices=[('admin','Администратор'),('editor','Редактор'),('viewer','Просмотр')], default='viewer', max_length=20)),
+                ('telegram_chat_id', models.CharField(blank=True, max_length=50)),
+                ('notify_email', models.BooleanField(default=True)),
+                ('notify_telegram', models.BooleanField(default=False)),
+                ('groups', models.ManyToManyField(blank=True, to='auth.group')),
+                ('user_permissions', models.ManyToManyField(blank=True, to='auth.permission')),
             ],
-            options={
-                'verbose_name': 'Cloud-сервер',
-                'verbose_name_plural': 'Cloud-серверы',
-                'ordering': ['provider__name', 'name'],
-            },
+            options={'verbose_name': 'Пользователь'},
+            managers=[('objects', django.contrib.auth.models.UserManager())],
+        ),
+        migrations.CreateModel(
+            name='UserSiteRole',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('role', models.CharField(default='viewer', max_length=20)),
+                ('site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.site')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.user')),
+            ],
+            options={'unique_together': {('user', 'site')}},
+        ),
+        migrations.AddField(
+            model_name='user',
+            name='sites',
+            field=models.ManyToManyField(blank=True, through='core.UserSiteRole', to='core.site'),
         ),
     ]
