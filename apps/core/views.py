@@ -3,7 +3,6 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from apps.core.models import Site
 from apps.licenses.models import License
 from apps.internet.models import ISPContract
@@ -11,6 +10,19 @@ from apps.dns.models import Domain
 from apps.cloud.models import CloudServer
 from django.utils import timezone
 from decimal import Decimal
+import requests as http_requests
+
+
+def _get_usd_rate():
+    """Получить курс USD/UZS из ЦБ Узбекистана."""
+    try:
+        resp = http_requests.get(
+            'https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/',
+            timeout=3
+        )
+        return Decimal(str(resp.json()[0]['Rate']))
+    except Exception:
+        return Decimal('12800')
 
 
 def login_view(request):
@@ -41,40 +53,56 @@ def dashboard(request):
     accessible_ids = [s.id for s in request.user.get_accessible_sites()]
     site_filter = {'site_id': site.id} if site else {'site_id__in': accessible_ids}
 
-    today = timezone.now().date()
-    deadline_30  = today + timezone.timedelta(days=30)
-    deadline_90  = today + timezone.timedelta(days=90)
+    today       = timezone.now().date()
+    deadline_30 = today + timezone.timedelta(days=30)
+    deadline_90 = today + timezone.timedelta(days=90)
 
-    # KPI
-    lic_total   = License.objects.filter(**site_filter).count()
-    lic_expiring = License.objects.filter(**site_filter, expiry_date__lte=deadline_30,
-                                          expiry_date__gte=today).count()
-    lic_expired = License.objects.filter(**site_filter, expiry_date__lt=today).count()
+    # ── KPI counts ────────────────────────────────────────
+    lic_total    = License.objects.filter(**site_filter).count()
+    lic_expiring = License.objects.filter(
+        **site_filter, expiry_date__lte=deadline_30, expiry_date__gte=today
+    ).count()
+    lic_expired  = License.objects.filter(**site_filter, expiry_date__lt=today).count()
 
-    isp_total   = ISPContract.objects.filter(**site_filter).count()
-    isp_expired = ISPContract.objects.filter(**site_filter, end_date__lt=today).count()
+    isp_total    = ISPContract.objects.filter(**site_filter).count()
+    isp_expired  = ISPContract.objects.filter(**site_filter, end_date__lt=today).count()
 
-    dom_total   = Domain.objects.filter(**site_filter).count()
-    dom_expiring = Domain.objects.filter(**site_filter, expiry_date__lte=deadline_30,
-                                         expiry_date__gte=today).count()
+    dom_total    = Domain.objects.filter(**site_filter).count()
+    dom_expiring = Domain.objects.filter(
+        **site_filter, expiry_date__lte=deadline_30, expiry_date__gte=today
+    ).count()
 
-    # IT budget estimate
-    lic_cost = License.objects.filter(**site_filter).exclude(
+    # ── IT Budget ─────────────────────────────────────────
+    usd_rate = _get_usd_rate()
+
+    # Licenses
+    lic_qs = License.objects.filter(**site_filter).exclude(
         price_per_unit__isnull=True
     ).exclude(quantity_total__isnull=True)
     total_lic_usd = sum(
-        (l.price_per_unit * l.quantity_total for l in lic_cost
-         if l.price_per_unit and l.quantity_total),
+        (l.price_per_unit * l.quantity_total for l in lic_qs if l.price_per_unit and l.quantity_total),
         Decimal('0')
     )
-    isp_monthly_uzs = ISPContract.objects.filter(**site_filter).exclude(cost_uzs__isnull=True)
-    total_isp_uzs = sum((c.cost_uzs for c in isp_monthly_uzs if c.cost_uzs), Decimal('0'))
-    total_isp_usd = total_isp_uzs / Decimal('12800') * 12  # annual
 
-    cloud_monthly = CloudServer.objects.filter(**site_filter).exclude(cost_usd__isnull=True)
-    total_cloud_usd = sum((s.cost_usd * 12 for s in cloud_monthly if s.cost_usd), Decimal('0'))
+    # ISP (UZS → USD annual)
+    isp_qs = ISPContract.objects.filter(**site_filter).exclude(cost_uzs__isnull=True)
+    total_isp_uzs = sum((c.cost_uzs for c in isp_qs if c.cost_uzs), Decimal('0'))
+    total_isp_usd = (total_isp_uzs / usd_rate) * 12
 
-    # Expiring soon list
+    # Cloud
+    cloud_qs = CloudServer.objects.filter(**site_filter).exclude(cost_usd__isnull=True)
+    total_cloud_usd = sum((s.cost_usd * 12 for s in cloud_qs if s.cost_usd), Decimal('0'))
+
+    # DNS
+    total_dns_usd = sum(
+        (d.cost_usd for d in Domain.objects.filter(**site_filter) if d.cost_usd),
+        Decimal('0')
+    )
+
+    grand_total_usd = total_lic_usd + total_isp_usd + total_cloud_usd + total_dns_usd
+    grand_total_uzs = grand_total_usd * usd_rate
+
+    # ── Expiring soon ─────────────────────────────────────
     expiring_licenses = License.objects.filter(
         **site_filter,
         expiry_date__isnull=False,
@@ -88,20 +116,27 @@ def dashboard(request):
     ).select_related('site', 'registrar').order_by('expiry_date')[:5]
 
     ctx = {
-        'lic_total':    lic_total,
-        'lic_expiring': lic_expiring,
-        'lic_expired':  lic_expired,
-        'isp_total':    isp_total,
-        'isp_expired':  isp_expired,
-        'dom_total':    dom_total,
-        'dom_expiring': dom_expiring,
+        'lic_total':        lic_total,
+        'lic_expiring':     lic_expiring,
+        'lic_expired':      lic_expired,
+        'isp_total':        isp_total,
+        'isp_expired':      isp_expired,
+        'dom_total':        dom_total,
+        'dom_expiring':     dom_expiring,
         'total_lic_usd':    total_lic_usd,
+        'total_lic_uzs':    total_lic_usd * usd_rate,
         'total_isp_usd':    total_isp_usd,
+        'total_isp_uzs':    total_isp_uzs * 12,
         'total_cloud_usd':  total_cloud_usd,
-        'grand_total_usd':  total_lic_usd + total_isp_usd + total_cloud_usd,
+        'total_cloud_uzs':  total_cloud_usd * usd_rate,
+        'total_dns_usd':    total_dns_usd,
+        'total_dns_uzs':    total_dns_usd * usd_rate,
+        'grand_total_usd':  grand_total_usd,
+        'grand_total_uzs':  grand_total_uzs,
+        'usd_rate':         usd_rate,
         'expiring_licenses': expiring_licenses,
         'expiring_domains':  expiring_domains,
-        'today': today,
+        'today':            today,
     }
     return render(request, 'core/dashboard.html', ctx)
 
@@ -109,7 +144,6 @@ def dashboard(request):
 @login_required
 @require_POST
 def switch_site(request):
-    """AJAX: переключить текущий объект."""
     site_id = request.POST.get('site_id')
     if site_id == 'all':
         request.session.pop('current_site_id', None)
