@@ -11,7 +11,7 @@
 {% block content %}
 <div class="pg-hd">
   <div class="pg-title">Дашборд</div>
-  <div class="pg-meta">{% if current_site %}Объект: {{ current_site.name }} · {% endif %}Обновлено: {{ today }} · Курс ЦБ: {{ usd_rate|floatformat:0 }} UZS/USD</div>
+  <div class="pg-meta">{% if current_site %}Объект: {{ current_site.name }} · {% endif %}Обновлено: {{ today }} · Курс ЦБ: {{ usd_rate|floatformat:'0g' }} UZS/USD</div>
 </div>
 
 <div class="kpis">
@@ -22,8 +22,8 @@
   </div>
   <div class="kpi" style="--kc:#006652">
     <div class="kpi-l">IT-расходы / год</div>
-    <div class="kpi-v" style="font-size:16px;color:var(--teal)">${{ grand_total_usd|floatformat:0 }}</div>
-    <div class="kpi-n" style="font-size:12px;margin-top:3px;color:var(--muted)">{{ grand_total_uzs|floatformat:0 }} UZS</div>
+    <div class="kpi-v" style="font-size:16px;color:var(--teal)">${{ grand_total_usd|floatformat:'0g' }}</div>
+    <div class="kpi-n" style="font-size:12px;margin-top:3px;color:var(--muted)">{{ grand_total_uzs|floatformat:'0g' }} UZS</div>
   </div>
   <div class="kpi" style="--kc:#BF2600">
     <div class="kpi-l">Истекают ≤ 30 дн.</div>
@@ -98,7 +98,7 @@
 <!-- Budget -->
 <div class="sec-hd" style="margin-top:8px">
   <div class="sec-title"><div class="sec-dot" style="background:var(--blue)"></div>Сводка IT-бюджета / год</div>
-  <div style="font-size:11px;color:var(--muted)">Курс ЦБ: 1 USD = {{ usd_rate|floatformat:0 }} UZS</div>
+  <div style="font-size:11px;color:var(--muted)">Курс ЦБ: 1 USD = {{ usd_rate|floatformat:'0g' }} UZS</div>
 </div>
 <div class="tbl-wrap" style="margin-bottom:0">
   <table class="tbl">
@@ -106,30 +106,30 @@
     <tbody>
       <tr>
         <td>Лицензии</td>
-        <td style="font-weight:600;color:var(--blue)">${{ total_lic_usd|floatformat:0 }}</td>
-        <td style="color:var(--muted)">{{ total_lic_uzs|floatformat:0 }} UZS</td>
+        <td style="font-weight:600;color:var(--blue)">${{ total_lic_usd|floatformat:'0g' }}</td>
+        <td style="color:var(--muted)">{{ total_lic_uzs|floatformat:'0g' }} UZS</td>
       </tr>
       <tr>
         <td>Интернет и связь</td>
-        <td style="font-weight:600;color:var(--blue)">${{ total_isp_usd|floatformat:0 }}</td>
-        <td style="color:var(--muted)">{{ total_isp_uzs|floatformat:0 }} UZS</td>
+        <td style="font-weight:600;color:var(--blue)">${{ total_isp_usd|floatformat:'0g' }}</td>
+        <td style="color:var(--muted)">{{ total_isp_uzs|floatformat:'0g' }} UZS</td>
       </tr>
       <tr>
         <td>Cloud-серверы</td>
-        <td style="font-weight:600;color:var(--blue)">${{ total_cloud_usd|floatformat:0 }}</td>
-        <td style="color:var(--muted)">{{ total_cloud_uzs|floatformat:0 }} UZS</td>
+        <td style="font-weight:600;color:var(--blue)">${{ total_cloud_usd|floatformat:'0g' }}</td>
+        <td style="color:var(--muted)">{{ total_cloud_uzs|floatformat:'0g' }} UZS</td>
       </tr>
       <tr>
         <td>DNS и домены</td>
-        <td style="font-weight:600;color:var(--blue)">${{ total_dns_usd|floatformat:0 }}</td>
-        <td style="color:var(--muted)">{{ total_dns_uzs|floatformat:0 }} UZS</td>
+        <td style="font-weight:600;color:var(--blue)">${{ total_dns_usd|floatformat:'0g' }}</td>
+        <td style="color:var(--muted)">{{ total_dns_uzs|floatformat:'0g' }} UZS</td>
       </tr>
     </tbody>
     <tfoot>
       <tr style="background:var(--sb)">
         <td style="color:#fff;font-weight:700;padding:12px 14px">Итого</td>
-        <td style="color:var(--teal-mid);font-weight:700;font-size:16px;padding:12px 14px">${{ grand_total_usd|floatformat:0 }}</td>
-        <td style="color:rgba(255,255,255,.6);padding:12px 14px">{{ grand_total_uzs|floatformat:0 }} UZS</td>
+        <td style="color:var(--teal-mid);font-weight:700;font-size:16px;padding:12px 14px">${{ grand_total_usd|floatformat:'0g' }}</td>
+        <td style="color:rgba(255,255,255,.6);padding:12px 14px">{{ grand_total_uzs|floatformat:'0g' }} UZS</td>
       </tr>
     </tfoot>
   </table>

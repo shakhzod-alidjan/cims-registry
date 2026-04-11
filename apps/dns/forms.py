@@ -28,7 +28,7 @@ class DomainForm(forms.ModelForm):
 class DomainPaymentForm(forms.ModelForm):
     class Meta:
         model  = DomainPayment
-        fields = ('paid_date', 'amount_usd', 'paid_by', 'notes')
+        fields = ('paid_date', 'amount', 'paid_by', 'notes')
         widgets = {
             'paid_date': forms.DateInput(attrs={'type': 'date'}),
             'notes':     forms.Textarea(attrs={'rows': 2}),
