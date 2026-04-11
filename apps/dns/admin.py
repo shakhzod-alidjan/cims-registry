@@ -12,7 +12,7 @@ class RegistrarAdmin(admin.ModelAdmin):
 class DomainPaymentInline(admin.TabularInline):
     model  = DomainPayment
     extra  = 1
-    fields = ('paid_date', 'amount_usd', 'paid_by', 'notes')
+    fields = ('paid_date', 'amount', 'paid_by', 'notes')
 
 
 @admin.register(Domain)
@@ -43,6 +43,6 @@ class DomainAdmin(admin.ModelAdmin):
 
 @admin.register(DomainPayment)
 class DomainPaymentAdmin(admin.ModelAdmin):
-    list_display  = ('domain', 'paid_date', 'amount_usd', 'paid_by')
+    list_display  = ('domain', 'paid_date', 'amount', 'paid_by')
     list_filter   = ('domain__site',)
     search_fields = ('domain__name', 'paid_by')
