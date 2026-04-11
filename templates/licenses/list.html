@@ -6,10 +6,7 @@
 
 {% block topbar_action %}
 {% if user.is_editor %}
-<a href="{% url 'license_add' %}" class="btn btn-p">
-  <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-  Добавить
-</a>
+<a href="{% url 'license_add' %}" class="btn btn-p">+ Добавить</a>
 {% endif %}
 <a href="{% url 'license_export' %}" class="btn btn-d btn-sm">Экспорт Excel</a>
 {% endblock %}
@@ -21,53 +18,47 @@
 </div>
 
 <div class="kpis">
-  <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Приложений</div><div class="kpi-v">{{ total_apps }}</div><div class="kpi-n">{{ total_records }} записей</div></div>
-  <div class="kpi" style="--kc:#006644"><div class="kpi-l">Активных</div><div class="kpi-v" style="color:var(--green)">{{ active_count }}</div><div class="kpi-n">записей в норме</div></div>
-  <div class="kpi" style="--kc:#BF2600"><div class="kpi-l">Истекли</div><div class="kpi-v" style="color:var(--red)">{{ expired_count }}</div><div class="kpi-n">требуют продления</div></div>
-  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Стоимость / год</div><div class="kpi-v" style="font-size:18px">${{ total_cost|floatformat:0 }}</div><div class="kpi-n">записей с ценой</div></div>
+  <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Приложений</div><div class="kpi-v">{{ total_apps }}</div><div class="kpi-n">{{ total_records }} лицензий</div></div>
+  <div class="kpi" style="--kc:#006644"><div class="kpi-l">Активных</div><div class="kpi-v" style="color:var(--green)">{{ active_count }}</div><div class="kpi-n">в норме</div></div>
+  <div class="kpi" style="--kc:#BF2600"><div class="kpi-l">Истекли</div><div class="kpi-v" style="color:var(--red)">{{ expired_count }}</div><div class="kpi-n">продления</div></div>
+  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Итого / год</div><div class="kpi-v" style="font-size:16px">${{ total_cost_usd|floatformat:0 }}</div><div class="kpi-n">{{ total_cost_uzs|floatformat:0 }} UZS</div></div>
 </div>
 
 <div class="sec-hd">
   <div style="display:flex;gap:6px;flex-wrap:wrap">
-    <a href="?" class="f-btn {% if not filter_tag %}on{% endif %}">Все ({{ total_apps }})</a>
-    <a href="?f=expired"  class="f-btn {% if filter_tag == 'expired' %}on{% endif %}">Истекли</a>
+    <a href="?"          class="f-btn {% if not filter_tag %}on{% endif %}">Все ({{ total_apps }})</a>
+    <a href="?f=expired" class="f-btn {% if filter_tag == 'expired' %}on{% endif %}">Истекли</a>
     <a href="?f=noventiq" class="f-btn {% if filter_tag == 'noventiq' %}on{% endif %}">Noventiq</a>
-    <a href="?f=1c"       class="f-btn {% if filter_tag == '1c' %}on{% endif %}">1С</a>
-    <a href="?f=mining"   class="f-btn {% if filter_tag == 'mining' %}on{% endif %}">Горное ПО</a>
+    <a href="?f=1c"      class="f-btn {% if filter_tag == '1c' %}on{% endif %}">1С</a>
+    <a href="?f=mining"  class="f-btn {% if filter_tag == 'mining' %}on{% endif %}">Горное ПО</a>
   </div>
   <button class="btn btn-d btn-sm" onclick="expandAll()">Развернуть все</button>
 </div>
 
 <style>
-.lg{display:grid;grid-template-columns:32px minmax(130px,2fr) 110px 130px 120px 75px 90px 110px 90px;align-items:center}
+.lg{display:grid;grid-template-columns:36px 2.5fr 1.5fr 80px 100px 110px 90px;align-items:center;gap:0}
 .lg-head{padding:8px 14px;background:#F4F5F7;border-bottom:1px solid var(--bdr)}
-.lg-th{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
-.lg-row{padding:12px 14px;border-left:3px solid transparent;cursor:pointer;transition:background .12s}
+.lg-th{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.lg-row{padding:11px 14px;border-left:3px solid transparent;cursor:pointer;transition:background .12s}
 .lg-row:hover{background:#F7F8FA}
 .acc-grp.is-open .lg-row{background:#FFFAE6;border-left-color:var(--amber)}
-.lg-child{padding:10px 14px;border-top:1px solid rgba(255,153,31,.15);background:#FFFDF5;transition:background .1s}
+.lg-child{padding:9px 14px;border-top:1px solid rgba(255,153,31,.12);background:#FFFDF5;transition:background .1s}
 .lg-child:hover{background:#FFF8E8}
 .f-btn{padding:5px 12px;border-radius:var(--r);border:1px solid var(--bdr2);background:var(--surf);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .12s;text-decoration:none;display:inline-block}
 .f-btn:hover,.f-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
-@media(max-width:1000px){
-  .lg{grid-template-columns:28px 1fr 0 0 0 0 100px 90px}
-  .lg>*:nth-child(3),.lg>*:nth-child(4),.lg>*:nth-child(5),.lg>*:nth-child(6){display:none}
-}
-@media(max-width:600px){
-  .lg{grid-template-columns:28px 1fr 90px 80px}
-  .lg>*:nth-child(7){display:none}
+@media(max-width:900px){
+  .lg{grid-template-columns:28px 1fr 0 0 110px 90px}
+  .lg>*:nth-child(3),.lg>*:nth-child(4),.lg>*:nth-child(5){display:none}
 }
 </style>
 
-<div class="acc" id="lic-acc">
+<div class="acc">
   <div class="lg lg-head">
     <div></div>
-    <div class="lg-th">Приложение</div>
-    <div class="lg-th">Тип</div>
-    <div class="lg-th">Вендор</div>
-    <div class="lg-th">Использование</div>
-    <div class="lg-th">Цена</div>
-    <div class="lg-th">Итого</div>
+    <div class="lg-th">Приложение / Вендор</div>
+    <div class="lg-th">Кол-во лицензий</div>
+    <div class="lg-th">Валюта</div>
+    <div class="lg-th">Стоимость</div>
     <div class="lg-th">Истечение</div>
     <div class="lg-th">Статус</div>
   </div>
@@ -81,27 +72,39 @@
           <svg viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;font-weight:700">
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ app.name }}</span>
-        <span class="acc-cnt">{{ lics.count }}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">
+          {{ app.name }}
+          <span class="acc-cnt">{{ lics.count }}</span>
+        </div>
+        {% if app.vendor %}<div style="font-size:11px;color:var(--muted);margin-top:2px">{{ app.vendor.name }}</div>{% endif %}
       </div>
-      <div class="td-m">{{ lics.count }} тип{% if lics.count > 1 %}а{% endif %}</div>
-      <div>{% if app.vendor %}<span class="pill p-blue" style="font-size:10px">{{ app.vendor.name }}</span>{% else %}<span class="td-m">—</span>{% endif %}</div>
-      <div class="td-m" style="font-size:11px">
-        {% for lic in lics %}{% if lic.quantity_total and lic.quantity_used %}{{ lic.quantity_used }}/{{ lic.quantity_total }}{% if not forloop.last %} · {% endif %}{% endif %}{% endfor %}
+      <div style="font-size:12px;color:var(--txt2)">
+        {% for lic in lics %}
+          {% if lic.quantity_total %}
+          <span>{{ lic.quantity_total }} шт.{% if not forloop.last %} · {% endif %}</span>
+          {% endif %}
+        {% endfor %}
       </div>
-      <div style="font-size:12px;font-weight:600;color:var(--blue)">{{ item.price_display }}</div>
-      <div style="font-size:13px;font-weight:700">{{ item.total_display }}</div>
+      <div>
+        {% for lic in lics %}
+          <span class="pill p-gray" style="font-size:10px">{{ lic.currency }}</span>
+        {% endfor %}
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--blue)">
+          {% if item.total_cost_usd %}${{ item.total_cost_usd|floatformat:0 }}{% else %}—{% endif %}
+        </div>
+        {% if item.total_cost_uzs %}
+        <div style="font-size:10px;color:var(--muted)">{{ item.total_cost_uzs|floatformat:0 }} UZS</div>
+        {% endif %}
+      </div>
       <div>
         {% if item.worst_expiry %}
-          {% if item.worst_days <= 0 %}
-            <span class="pill p-red" style="font-size:10px">Истёк</span>
-          {% elif item.worst_days <= 90 %}
-            <span class="pill p-amber" style="font-size:10px">{{ item.worst_days }} дн.</span>
-          {% else %}
-            <span class="pill p-green" style="font-size:10px">{{ item.worst_days }} дн.</span>
-          {% endif %}
-        {% else %}<span class="td-m">—</span>{% endif %}
+          <span class="pill {% if item.worst_days <= 0 %}p-red{% elif item.worst_days <= 90 %}p-amber{% else %}p-green{% endif %}" style="font-size:10px">
+            {% if item.worst_days <= 0 %}Истёк{% else %}{{ item.worst_days }} дн.{% endif %}
+          </span>
+        {% else %}<span class="td-m">Бессрочно</span>{% endif %}
       </div>
       <div>{% include "components/status_badge.html" with status=item.worst_status %}</div>
     </div>
@@ -109,24 +112,28 @@
     <div class="acc-body" id="ab-{{ app.pk }}" style="max-height:0;overflow:hidden;transition:max-height .24s cubic-bezier(.4,0,.2,1)">
       {% for lic in lics %}
       <div class="lg lg-child">
-        <div style="color:rgba(255,153,31,.4);font-size:13px;display:flex;align-items:center;justify-content:center">└</div>
-        <div style="font-size:12px;color:var(--txt2);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ lic.get_license_type_display }}{% if lic.license_type_custom %} — {{ lic.license_type_custom }}{% endif %}</div>
-        <div><span class="pill p-amber" style="font-size:10px">{{ lic.get_license_type_display }}</span></div>
-        <div>{% if app.vendor %}<span class="pill p-blue" style="font-size:10px">{{ app.vendor.name }}</span>{% else %}—{% endif %}</div>
+        <div style="color:rgba(255,153,31,.4);font-size:12px;display:flex;align-items:center;justify-content:center">└</div>
         <div>
-          {% if lic.quantity_total and lic.quantity_used %}
-          <div class="ubar">
-            <div class="ubar-tr"><div class="ubar-fl" style="width:{% widthratio lic.quantity_used lic.quantity_total 100 %}%;background:{% if lic.quantity_used >= lic.quantity_total %}var(--red){% else %}var(--teal-mid){% endif %}"></div></div>
-            <span class="ubar-t">{{ lic.quantity_used }}/{{ lic.quantity_total }}</span>
-          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--txt2)">{{ lic.get_license_type_display }}{% if lic.license_type_custom %} — {{ lic.license_type_custom }}{% endif %}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">{{ lic.site.name }}</div>
+        </div>
+        <div style="font-size:12px">
+          {% if lic.quantity_total %}
+          <span style="font-weight:600">{{ lic.quantity_total }} шт.</span>
+          {% if lic.quantity_used %}<span style="color:var(--muted)"> · {{ lic.quantity_used }} исп.</span>{% endif %}
           {% else %}—{% endif %}
         </div>
-        <div style="font-size:12px;font-weight:600;color:var(--blue)">{% if lic.price_per_unit %}${{ lic.price_per_unit|floatformat:0 }}{% else %}—{% endif %}</div>
-        <div style="font-size:13px;font-weight:700">{% if lic.total_cost %}${{ lic.total_cost|floatformat:0 }}{% else %}—{% endif %}</div>
+        <div><span class="pill p-gray" style="font-size:10px">{{ lic.currency }}</span></div>
+        <div>
+          {% if lic.total_cost %}
+          <div style="font-size:12px;font-weight:600;color:var(--blue)">{{ lic.total_cost|floatformat:0 }} {{ lic.currency }}</div>
+          {% if lic.price_per_unit %}<div style="font-size:10px;color:var(--muted)">{{ lic.price_per_unit|floatformat:0 }} × {{ lic.quantity_total }}</div>{% endif %}
+          {% else %}—{% endif %}
+        </div>
         <div>
           {% if lic.expiry_date %}
             <span class="pill {% if lic.days_until_expiry <= 0 %}p-red{% elif lic.days_until_expiry <= 90 %}p-amber{% else %}p-green{% endif %}" style="font-size:10px">{{ lic.expiry_date }}</span>
-          {% else %}—{% endif %}
+          {% else %}<span class="td-m">—</span>{% endif %}
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           {% include "components/status_badge.html" with status=lic.status %}
@@ -138,7 +145,7 @@
   </div>
   {% endwith %}
   {% empty %}
-  <div class="empty-state">Нет лицензий для выбранного объекта{% if filter_tag %} и фильтра{% endif %}</div>
+  <div class="empty-state">Нет лицензий{% if filter_tag %} для выбранного фильтра{% endif %}</div>
   {% endfor %}
 </div>
 {% endblock %}
@@ -153,7 +160,7 @@ function expandAll() {
     const body = g.querySelector('.acc-body');
     if (!body) return;
     if (allExpanded) { g.classList.add('is-open'); body.style.maxHeight = body.scrollHeight + 100 + 'px'; }
-    else             { g.classList.remove('is-open'); body.style.maxHeight = '0'; }
+    else { g.classList.remove('is-open'); body.style.maxHeight = '0'; }
   });
 }
 </script>

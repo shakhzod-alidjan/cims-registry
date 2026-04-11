@@ -1,0 +1,18 @@
+from django.db import migrations, models
+
+class Migration(migrations.Migration):
+    dependencies = [('internet', '0001_initial')]
+    operations = [
+        migrations.AddField(
+            model_name='ispcontract',
+            name='currency',
+            field=models.CharField(choices=[('USD','USD'),('UZS','UZS'),('EUR','EUR'),('RUB','RUB')],
+                                   default='UZS', max_length=3, verbose_name='Валюта'),
+        ),
+        migrations.AddField(
+            model_name='ispcontract',
+            name='cost',
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=14,
+                                      null=True, verbose_name='Стоимость / мес'),
+        ),
+    ]

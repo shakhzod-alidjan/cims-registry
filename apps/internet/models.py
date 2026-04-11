@@ -1,6 +1,7 @@
 from django.db import models
 from apps.core.models import Site
 
+CURRENCY_CHOICES = [('USD','USD'),('UZS','UZS'),('EUR','EUR'),('RUB','RUB')]
 
 class ISPOperator(models.Model):
     name          = models.CharField('Оператор', max_length=200)
@@ -19,19 +20,10 @@ class ISPOperator(models.Model):
 
 
 class ISPContract(models.Model):
-    TYPE_INTERNET = 'internet'
-    TYPE_RESERVE  = 'reserve'
-    TYPE_APN      = 'apn'
-    TYPE_MPLS     = 'mpls'
-    TYPE_MOBILE   = 'mobile'
-    TYPE_PHONE    = 'phone'
     TYPE_CHOICES = [
-        (TYPE_INTERNET, 'Интернет (основной)'),
-        (TYPE_RESERVE,  'Резерв интернет'),
-        (TYPE_APN,      'APN услуги'),
-        (TYPE_MPLS,     'MPLS VPN'),
-        (TYPE_MOBILE,   'Мобильная связь'),
-        (TYPE_PHONE,    'Городская телефония'),
+        ('internet','Интернет (основной)'),('reserve','Резерв интернет'),
+        ('apn','APN услуги'),('mpls','MPLS VPN'),
+        ('mobile','Мобильная связь'),('phone','Городская телефония'),
     ]
 
     site            = models.ForeignKey(Site, on_delete=models.CASCADE,
@@ -41,7 +33,7 @@ class ISPContract(models.Model):
     service_type    = models.CharField('Тип услуги', max_length=20, choices=TYPE_CHOICES)
     service_name    = models.CharField('Название услуги', max_length=200)
     tariff          = models.CharField('Тариф / описание', max_length=200, blank=True)
-    location        = models.CharField('Локация / объект', max_length=200, blank=True)
+    location        = models.CharField('Локация', max_length=200, blank=True)
     speed           = models.CharField('Скорость / объём', max_length=100, blank=True)
     ip_address      = models.GenericIPAddressField('IP адрес', null=True, blank=True)
     contract_number = models.CharField('№ договора', max_length=100, blank=True)
@@ -49,10 +41,17 @@ class ISPContract(models.Model):
     start_date      = models.DateField('Дата начала', null=True, blank=True)
     end_date        = models.DateField('Дата окончания', null=True, blank=True)
     auto_renewal    = models.BooleanField('Авто-продление', default=False)
+
+    # Мультивалютность
+    cost            = models.DecimalField('Стоимость / мес', max_digits=14, decimal_places=2,
+                                          null=True, blank=True)
+    currency        = models.CharField('Валюта', max_length=3, choices=CURRENCY_CHOICES, default='UZS')
+    # legacy fields
     cost_uzs        = models.DecimalField('Стоимость / мес (UZS)', max_digits=14, decimal_places=0,
                                           null=True, blank=True)
     cost_usd        = models.DecimalField('Стоимость / мес (USD)', max_digits=10, decimal_places=2,
                                           null=True, blank=True)
+
     payment_method  = models.CharField('Способ оплаты', max_length=100, blank=True)
     next_payment    = models.DateField('Дата след. оплаты', null=True, blank=True)
     notes           = models.TextField('Примечания', blank=True)
@@ -66,6 +65,27 @@ class ISPContract(models.Model):
 
     def __str__(self):
         return f'{self.service_name} — {self.operator} [{self.site.name}]'
+
+    def get_cost_usd_monthly(self, usd_rate=12800):
+        from decimal import Decimal
+        val = self.cost or self.cost_usd or (self.cost_uzs and self.cost_uzs) or Decimal('0')
+        if not val:
+            return Decimal('0')
+        rate = Decimal(str(usd_rate))
+        cur = self.currency
+        if self.cost:
+            cur = self.currency
+        elif self.cost_usd:
+            cur = 'USD'
+        elif self.cost_uzs:
+            cur = 'UZS'
+        if cur == 'USD':
+            return val
+        elif cur == 'UZS':
+            return val / rate
+        elif cur == 'EUR':
+            return val * Decimal('1.08')
+        return val
 
     @property
     def days_until_expiry(self):

@@ -1,6 +1,7 @@
 from django.db import models
 from apps.core.models import Site
 
+CURRENCY_CHOICES = [('USD','USD'),('UZS','UZS'),('EUR','EUR'),('RUB','RUB')]
 
 class Registrar(models.Model):
     name          = models.CharField('Регистратор', max_length=200)
@@ -18,19 +19,23 @@ class Registrar(models.Model):
 
 
 class Domain(models.Model):
-    site            = models.ForeignKey(Site, on_delete=models.CASCADE,
-                                        verbose_name='Объект', related_name='domains')
-    registrar       = models.ForeignKey(Registrar, on_delete=models.SET_NULL, null=True,
-                                        verbose_name='Регистратор', related_name='domains')
-    name            = models.CharField('Домен', max_length=255, unique=True)
+    site              = models.ForeignKey(Site, on_delete=models.CASCADE,
+                                          verbose_name='Объект', related_name='domains')
+    registrar         = models.ForeignKey(Registrar, on_delete=models.SET_NULL, null=True,
+                                          verbose_name='Регистратор', related_name='domains')
+    name              = models.CharField('Домен', max_length=255, unique=True)
     registration_date = models.DateField('Дата регистрации', null=True, blank=True)
-    expiry_date     = models.DateField('Дата истечения', null=True, blank=True)
-    cost_usd        = models.DecimalField('Стоимость / год (USD)', max_digits=8, decimal_places=2,
-                                          null=True, blank=True)
-    auto_renewal    = models.BooleanField('Авто-продление', default=False)
-    notes           = models.TextField('Примечания', blank=True)
-    created_at      = models.DateTimeField(auto_now_add=True)
-    updated_at      = models.DateTimeField(auto_now=True)
+    expiry_date       = models.DateField('Дата истечения', null=True, blank=True)
+    cost              = models.DecimalField('Стоимость / год', max_digits=14, decimal_places=2,
+                                            null=True, blank=True)
+    currency          = models.CharField('Валюта', max_length=3, choices=CURRENCY_CHOICES, default='USD')
+    # legacy field kept for migration compatibility
+    cost_usd          = models.DecimalField('Стоимость / год (USD)', max_digits=8, decimal_places=2,
+                                            null=True, blank=True)
+    auto_renewal      = models.BooleanField('Авто-продление', default=False)
+    notes             = models.TextField('Примечания', blank=True)
+    created_at        = models.DateTimeField(auto_now_add=True)
+    updated_at        = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Домен'
@@ -39,6 +44,22 @@ class Domain(models.Model):
 
     def __str__(self):
         return f'{self.name} [{self.site.name}]'
+
+    def get_cost_usd(self, usd_rate=12800):
+        from decimal import Decimal
+        val = self.cost or self.cost_usd
+        if not val:
+            return Decimal('0')
+        rate = Decimal(str(usd_rate))
+        if self.currency == 'USD':
+            return val
+        elif self.currency == 'UZS':
+            return val / rate
+        elif self.currency == 'EUR':
+            return val * Decimal('1.08')
+        elif self.currency == 'RUB':
+            return val / Decimal('90')
+        return val
 
     @property
     def days_until_expiry(self):
@@ -62,14 +83,14 @@ class Domain(models.Model):
 
 
 class DomainPayment(models.Model):
-    """История платежей за домен"""
-    domain      = models.ForeignKey(Domain, on_delete=models.CASCADE,
-                                    verbose_name='Домен', related_name='payments')
-    paid_date   = models.DateField('Дата оплаты')
-    amount_usd  = models.DecimalField('Сумма (USD)', max_digits=8, decimal_places=2)
-    paid_by     = models.CharField('Кто оплатил', max_length=200, blank=True)
-    notes       = models.TextField('Примечания', blank=True)
-    created_at  = models.DateTimeField(auto_now_add=True)
+    domain     = models.ForeignKey(Domain, on_delete=models.CASCADE,
+                                   verbose_name='Домен', related_name='payments')
+    paid_date  = models.DateField('Дата оплаты')
+    amount     = models.DecimalField('Сумма', max_digits=14, decimal_places=2)
+    currency   = models.CharField('Валюта', max_length=3, choices=CURRENCY_CHOICES, default='USD')
+    paid_by    = models.CharField('Кто оплатил', max_length=200, blank=True)
+    notes      = models.TextField('Примечания', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Платёж за домен'
@@ -77,4 +98,4 @@ class DomainPayment(models.Model):
         ordering = ['-paid_date']
 
     def __str__(self):
-        return f'{self.domain.name} — {self.paid_date} — ${self.amount_usd}'
+        return f'{self.domain.name} — {self.paid_date} — {self.amount} {self.currency}'
