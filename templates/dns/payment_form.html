@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Платёж за {{ domain.name }}{% endblock %}
+{% block nav_dns %}on{% endblock %}
+{% block breadcrumb %}DNS › {{ domain.name }} › Платёж{% endblock %}
+{% block content %}
+<div class="pg-hd">
+  <div class="pg-title">Записать платёж</div>
+  <div class="pg-meta">Домен: {{ domain.name }} · {{ domain.site.name }}</div>
+</div>
+<div style="max-width:480px">
+  <div class="tbl-wrap" style="padding:24px 28px">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label" style="font-size:12px;font-weight:600;color:var(--txt2);display:block;margin-bottom:5px">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div style="font-size:12px;color:var(--red);margin-top:4px">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex;gap:8px;margin-top:20px;padding-top:14px;border-top:1px solid var(--bdr)">
+        <button type="submit" class="btn btn-p">Сохранить платёж</button>
+        <a href="{% url 'dns_list' %}" class="btn btn-d">Отмена</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

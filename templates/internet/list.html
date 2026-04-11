@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Интернет и связь — IT Registry{% endblock %}
+{% block nav_internet %}on{% endblock %}
+{% block breadcrumb %}Интернет и связь{% endblock %}
+
+{% block topbar_action %}
+{% if user.is_editor %}
+<a href="{% url 'isp_add' %}" class="btn btn-p">
+  <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+  Добавить договор
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="pg-hd">
+  <div class="pg-title">Интернет и услуги связи</div>
+  <div class="pg-meta">{{ total }} договоров · {{ expired }} истекло{% if current_site %} · {{ current_site.name }}{% endif %}</div>
+</div>
+
+<div class="kpis">
+  <div class="kpi" style="--kc:#006652"><div class="kpi-l">Операторов</div><div class="kpi-v">{{ operators_list|length }}</div></div>
+  <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Договоров</div><div class="kpi-v">{{ total }}</div></div>
+  <div class="kpi" style="--kc:#BF2600"><div class="kpi-l">Истекли</div><div class="kpi-v" style="color:var(--red)">{{ expired }}</div></div>
+  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Итого / мес</div><div class="kpi-v" style="font-size:16px;color:var(--teal)">{{ total_monthly_uzs|floatformat:0 }} UZS</div></div>
+</div>
+
+<div class="sec-hd">
+  <div class="sec-title"><div class="sec-dot" style="background:var(--teal)"></div>Операторы и договоры</div>
+  <div class="sec-hint">Нажмите для раскрытия</div>
+</div>
+
+<div class="ops-grid">
+{% for op_data in operators_list %}
+<div class="op-card" id="op-{{ op_data.id }}">
+  <div class="op-hd" onclick="toggleOp('{{ op_data.id }}')">
+    <div style="flex:1">
+      <div class="op-name">{{ op_data.name }}</div>
+      <div class="op-hint">{{ op_data.contracts|length }} услуг · {{ op_data.site_names }}</div>
+      {% if op_data.total_uzs %}
+      <div class="op-cost">{{ op_data.total_uzs|floatformat:0 }} <span>UZS/мес</span></div>
+      {% endif %}
+      <div class="op-tags" style="margin-top:8px">
+        {% for c in op_data.contracts %}
+        <span class="pill p-teal" style="font-size:10px">{{ c.service_name }}</span>
+        {% endfor %}
+        {% if op_data.has_expired %}
+        <span class="pill p-red" style="font-size:10px">Есть истёкшие</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="op-chev" id="oc-{{ op_data.id }}">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+  <div class="op-children" id="ocw-{{ op_data.id }}" style="max-height:0;overflow:hidden;transition:max-height .24s cubic-bezier(.4,0,.2,1)">
+    {% for c in op_data.contracts %}
+    <div class="svc-item">
+      <div class="svc-top">
+        <div class="svc-name">{{ c.service_name }}</div>
+        <div class="svc-acts">
+          {% include "components/status_badge.html" with status=c.status %}
+          <span class="pill p-blue" style="font-size:10px">{{ c.site.name }}</span>
+          {% if user.is_editor %}<a href="{% url 'isp_edit' c.pk %}" class="dl-btn">✎ Ред.</a>{% endif %}
+          {% if c.contract_file %}<a href="{{ c.contract_file.url }}" class="dl-btn pdf" target="_blank">PDF</a>{% endif %}
+        </div>
+      </div>
+      <div class="svc-grid">
+        <div><div class="svc-fl">Тариф</div><div class="svc-fv">{{ c.tariff|default:"—" }}</div></div>
+        <div><div class="svc-fl">Локация</div><div class="svc-fv">{{ c.location|default:c.site.name }}</div></div>
+        <div><div class="svc-fl">Скорость</div><div class="svc-fv">{{ c.speed|default:"—" }}</div></div>
+        {% if c.ip_address %}<div><div class="svc-fl">IP адрес</div><div class="svc-fv mono">{{ c.ip_address }}</div></div>{% endif %}
+        {% if c.contract_number %}<div><div class="svc-fl">№ договора</div><div class="svc-fv mono">{{ c.contract_number }}</div></div>{% endif %}
+        {% if c.end_date %}
+        <div>
+          <div class="svc-fl">Окончание</div>
+          <div class="svc-fv {% if c.status == 'expired' %}exp{% endif %}">{{ c.end_date }}</div>
+        </div>
+        {% endif %}
+        <div><div class="svc-fl">Оплата</div><div class="svc-fv">{{ c.payment_method|default:"—" }}</div></div>
+        {% if c.next_payment %}<div><div class="svc-fl">След. оплата</div><div class="svc-fv">{{ c.next_payment }}</div></div>{% endif %}
+        {% if c.cost_uzs %}
+        <div style="grid-column:1/-1">
+          <div class="svc-fl">Стоимость / мес</div>
+          <div class="svc-fv cost">{{ c.cost_uzs|floatformat:0 }} UZS</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="empty-state" style="grid-column:1/-1">Нет договоров для выбранного объекта</div>
+{% endfor %}
+</div>
+
+<div class="sec-hd" style="margin-top:4px">
+  <div class="sec-title"><div class="sec-dot" style="background:var(--blue)"></div>Все договоры — сводная таблица</div>
+</div>
+<div class="tbl-wrap">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Услуга</th><th>Оператор</th><th>Объект</th><th>Скорость</th>
+        <th>Стоимость / мес</th><th>Окончание</th><th>Статус</th>
+        {% if user.is_editor %}<th style="text-align:right">Действия</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in all_contracts %}
+    <tr>
+      <td class="td-fw">{{ c.service_name }}</td>
+      <td><span class="pill p-teal">{{ c.operator.name|default:"—" }}</span></td>
+      <td><span class="pill p-blue">{{ c.site.name }}</span></td>
+      <td style="font-weight:600">{{ c.speed|default:"—" }}</td>
+      <td class="td-cost">{% if c.cost_uzs %}{{ c.cost_uzs|floatformat:0 }} UZS{% else %}—{% endif %}</td>
+      <td class="{% if c.status == 'expired' %}td-exp{% endif %}">{{ c.end_date|default:"—" }}</td>
+      <td>{% include "components/status_badge.html" with status=c.status %}</td>
+      {% if user.is_editor %}
+      <td class="actions">
+        <a href="{% url 'isp_edit' c.pk %}" class="dl-btn">✎</a>
+        {% if c.contract_file %}<a href="{{ c.contract_file.url }}" class="dl-btn pdf" target="_blank">PDF</a>{% endif %}
+      </td>
+      {% endif %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" class="empty-state">Нет данных</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if total_monthly_uzs %}
+<div class="tot-banner">
+  {% for op_data in operators_list %}
+  {% if op_data.total_uzs %}
+  <div class="tot-item"><div class="tot-lbl">{{ op_data.name }} / мес</div><div class="tot-val">{{ op_data.total_uzs|floatformat:0 }} UZS</div></div>
+  <div class="tot-div"></div>
+  {% endif %}
+  {% endfor %}
+  <div class="tot-item tot-main"><div class="tot-lbl">Итого / месяц</div><div class="tot-val">{{ total_monthly_uzs|floatformat:0 }} UZS</div></div>
+  <div class="tot-div"></div>
+  <div class="tot-item"><div class="tot-lbl">В год</div><div class="tot-val">{{ total_annual_uzs|floatformat:0 }} UZS</div></div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const openOps = new Set();
+function toggleOp(id) {
+  const card = document.getElementById('op-'+id);
+  const cw   = document.getElementById('ocw-'+id);
+  if (!cw) return;
+  if (openOps.has(id)) {
+    openOps.delete(id); card.classList.remove('is-open'); cw.style.maxHeight = '0';
+  } else {
+    openOps.add(id); card.classList.add('is-open'); cw.style.maxHeight = cw.scrollHeight + 200 + 'px';
+  }
+}
+</script>
+{% endblock %}

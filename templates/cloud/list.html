@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Cloud — IT Registry{% endblock %}
+{% block nav_cloud %}on{% endblock %}
+{% block breadcrumb %}Cloud{% endblock %}
+
+{% block topbar_action %}
+{% if user.is_editor %}
+<a href="{% url 'server_add' %}" class="btn btn-p">
+  <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+  Добавить сервер
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="pg-hd">
+  <div class="pg-title">Cloud-инфраструктура</div>
+  <div class="pg-meta">{{ prov_groups|length }} провайдеров · {{ total }} серверов · ${{ total_monthly|floatformat:0 }}/мес{% if current_site %} · {{ current_site.name }}{% endif %}</div>
+</div>
+
+<div class="kpis">
+  <div class="kpi" style="--kc:#403294"><div class="kpi-l">Провайдеров</div><div class="kpi-v">{{ prov_groups|length }}</div></div>
+  <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Серверов / VPS</div><div class="kpi-v">{{ total }}</div></div>
+  <div class="kpi" style="--kc:#006652"><div class="kpi-l">Расходы / мес</div><div class="kpi-v" style="font-size:18px;color:var(--teal)">${{ total_monthly|floatformat:0 }}</div></div>
+  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Расходы / год</div><div class="kpi-v" style="font-size:18px">${{ total_annual|floatformat:0 }}</div></div>
+</div>
+
+<div class="sec-hd">
+  <div class="sec-title"><div class="sec-dot" style="background:var(--purple)"></div>Провайдеры и серверы</div>
+  <div class="sec-hint">Нажмите для раскрытия</div>
+</div>
+
+<div class="ops-grid">
+{% for pg in prov_groups %}
+<div class="op-card" id="cld-{{ pg.prov_id }}">
+  <div class="op-hd" onclick="toggleCloud('{{ pg.prov_id }}')">
+    <div style="flex:1">
+      <div class="op-name">{{ pg.prov_name }}</div>
+      <div class="op-hint">{{ pg.servers|length }} сервер{% if pg.servers|length > 1 %}а{% endif %}</div>
+      <div class="op-cost">${{ pg.total_monthly|floatformat:0 }} <span>USD/мес</span></div>
+      <div class="op-cost-usd" style="font-size:11px;color:var(--muted)">${{ pg.total_annual|floatformat:0 }}/год</div>
+      <div class="op-tags" style="margin-top:8px">
+        {% for s in pg.servers %}
+        <span class="pill p-purple" style="font-size:10px">{{ s.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="op-chev" id="cc-{{ pg.prov_id }}">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+  <div class="op-children" id="ccw-{{ pg.prov_id }}" style="max-height:0;overflow:hidden;transition:max-height .24s cubic-bezier(.4,0,.2,1)">
+    {% for s in pg.servers %}
+    <div class="svc-item">
+      <div class="svc-top">
+        <div>
+          <div class="svc-name">{{ s.name }}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ s.purpose|default:"—" }}</div>
+        </div>
+        <div class="svc-acts">
+          <span class="pill p-teal" style="font-size:10px">{{ s.site.name }}</span>
+          <span class="sdot {% if s.status == 'active' %}s-ok{% else %}s-exp{% endif %}">{{ s.get_status_display }}</span>
+          {% if user.is_editor %}
+          <a href="{% url 'server_edit' s.pk %}" class="dl-btn">✎ Ред.</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="svc-grid">
+        <div><div class="svc-fl">Характеристики</div><div class="svc-fv" style="font-size:11px">{{ s.spec|default:"—" }}</div></div>
+        <div><div class="svc-fl">ОС</div><div class="svc-fv">{{ s.os|default:"—" }}</div></div>
+        <div><div class="svc-fl">Стоимость / мес</div><div class="svc-fv cost">${{ s.cost_usd|floatformat:0|default:"—" }}</div></div>
+        {% if s.ip_address %}<div><div class="svc-fl">IP адрес</div><div class="svc-fv mono">{{ s.ip_address }}</div></div>{% endif %}
+        {% if s.next_payment %}<div><div class="svc-fl">Следующий платёж</div><div class="svc-fv">{{ s.next_payment }}</div></div>{% endif %}
+        {% if s.cost_yearly %}<div><div class="svc-fl">В год</div><div class="svc-fv" style="font-weight:600;color:var(--blue)">${{ s.cost_yearly|floatformat:0 }}</div></div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="empty-state" style="grid-column:1/-1">Нет серверов для выбранного объекта</div>
+{% endfor %}
+</div>
+
+<div class="sec-hd" style="margin-top:4px">
+  <div class="sec-title"><div class="sec-dot" style="background:var(--blue)"></div>Все серверы — сводная таблица</div>
+</div>
+<div class="tbl-wrap">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Сервер</th><th>Провайдер</th><th>Объект</th><th>Характеристики</th>
+        <th>Назначение</th><th>$/мес</th><th>Следующий платёж</th><th>Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for s in servers %}
+    <tr>
+      <td>
+        <div class="td-fw">{{ s.name }}</div>
+        {% if s.cpu %}<div style="font-size:10px;color:var(--muted);font-family:monospace">{{ s.cpu }}</div>{% endif %}
+      </td>
+      <td><span class="pill p-purple">{{ s.provider.name|default:"—" }}</span></td>
+      <td><span class="pill p-teal">{{ s.site.name }}</span></td>
+      <td style="font-size:11px;color:var(--muted)">{{ s.spec|default:"—" }}</td>
+      <td style="font-size:12px;color:var(--txt2)">{{ s.purpose|default:"—"|truncatechars:40 }}</td>
+      <td class="td-cost">${{ s.cost_usd|floatformat:0|default:"—" }}</td>
+      <td class="td-m">{{ s.next_payment|default:"—" }}</td>
+      <td><span class="sdot {% if s.status == 'active' %}s-ok{% else %}s-exp{% endif %}">{{ s.get_status_display }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" class="empty-state">Нет серверов</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if total_monthly %}
+<div class="tot-banner">
+  {% for pg in prov_groups %}
+  <div class="tot-item"><div class="tot-lbl">{{ pg.prov_name }} / мес</div><div class="tot-val">${{ pg.total_monthly|floatformat:0 }}</div></div>
+  {% if not forloop.last %}<div class="tot-div"></div>{% endif %}
+  {% endfor %}
+  <div class="tot-div"></div>
+  <div class="tot-item tot-main"><div class="tot-lbl">Итого / мес</div><div class="tot-val">${{ total_monthly|floatformat:0 }}</div></div>
+  <div class="tot-div"></div>
+  <div class="tot-item"><div class="tot-lbl">Прогноз / год</div><div class="tot-val">${{ total_annual|floatformat:0 }}</div></div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const openCloud = new Set();
+function toggleCloud(id) {
+  const card = document.getElementById('cld-'+id);
+  const cw   = document.getElementById('ccw-'+id);
+  if (!cw) return;
+  if (openCloud.has(id)) {
+    openCloud.delete(id); card.classList.remove('is-open'); cw.style.maxHeight = '0';
+  } else {
+    openCloud.add(id); card.classList.add('is-open'); cw.style.maxHeight = cw.scrollHeight + 200 + 'px';
+  }
+}
+</script>
+{% endblock %}

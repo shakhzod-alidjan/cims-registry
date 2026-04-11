@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}DNS и домены — IT Registry{% endblock %}
+{% block nav_dns %}on{% endblock %}
+{% block breadcrumb %}DNS и домены{% endblock %}
+
+{% block topbar_action %}
+{% if user.is_editor %}
+<a href="{% url 'domain_add' %}" class="btn btn-p">
+  <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+  Добавить домен
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="pg-hd">
+  <div class="pg-title">DNS и домены</div>
+  <div class="pg-meta">{{ total }} доменов · {{ expiring }} истекают ≤ 30 дн. · ${{ total_cost|floatformat:0 }}/год{% if current_site %} · {{ current_site.name }}{% endif %}</div>
+</div>
+
+<div class="kpis">
+  <div class="kpi" style="--kc:#403294"><div class="kpi-l">Объектов</div><div class="kpi-v">{{ site_groups|length }}</div></div>
+  <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Доменов</div><div class="kpi-v">{{ total }}</div></div>
+  <div class="kpi" style="--kc:#BF2600"><div class="kpi-l">Истекают ≤ 30 дн.</div><div class="kpi-v" style="color:var(--red)">{{ expiring }}</div></div>
+  <div class="kpi" style="--kc:#006652"><div class="kpi-l">Расходы / год</div><div class="kpi-v" style="font-size:18px">${{ total_cost|floatformat:0 }}</div></div>
+</div>
+
+<div class="sec-hd">
+  <div class="sec-title"><div class="sec-dot" style="background:var(--purple)"></div>Регистраторы и домены по объектам</div>
+  <div class="sec-hint">Нажмите для раскрытия</div>
+</div>
+
+{% for sg in site_groups %}
+<div class="op-card" style="margin-bottom:8px" id="dns-{{ sg.site_id }}">
+  <div class="op-hd" onclick="toggleDns('{{ sg.site_id }}')">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="op-name">{{ sg.site_name }}</div>
+        <span class="pill p-gray" style="font-size:10px">{{ sg.domains|length }}</span>
+        {% if sg.warn_count > 0 %}
+        <span class="pill p-red" style="font-size:10px">{{ sg.warn_count }} скоро истекают</span>
+        {% endif %}
+      </div>
+      <div class="op-hint">
+        {% if sg.registrar_name %}Регистратор: {{ sg.registrar_name }} · {% endif %}
+        ${{ sg.total_cost|floatformat:0 }}/год
+      </div>
+      <div class="op-tags" style="margin-top:6px">
+        {% for d in sg.domains %}
+        <span class="pill p-gray" style="font-size:10px">{{ d.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="text-align:right;margin-right:8px;flex-shrink:0">
+      <div style="font-size:13px;font-weight:700;color:var(--blue)">${{ sg.total_cost|floatformat:0 }}/год</div>
+      <div style="font-size:11px;color:var(--muted)">{{ sg.domains|length }} доменов</div>
+    </div>
+    <div class="op-chev" id="dc-{{ sg.site_id }}">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+  <div class="op-children" id="dw-{{ sg.site_id }}" style="max-height:0;overflow:hidden;transition:max-height .24s cubic-bezier(.4,0,.2,1)">
+    <!-- Domain rows header -->
+    <div style="display:grid;grid-template-columns:20px 1.8fr 1fr 1fr 1fr 1fr 1fr 110px;padding:7px 16px;background:#F4F5F7;border-top:1px solid var(--bdr);gap:0;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">
+      <div></div>
+      <div>Домен</div><div>Регистрация</div><div>Истечение</div>
+      <div>Цена/год</div><div>Последний платёж</div><div>Кто платил</div><div>Статус</div>
+    </div>
+    {% for d in sg.domains %}
+    <div style="display:grid;grid-template-columns:20px 1.8fr 1fr 1fr 1fr 1fr 1fr 110px;align-items:center;padding:11px 16px;border-top:1px solid rgba(255,153,31,.15);background:#FFFDF5;gap:0;transition:background .1s" onmouseover="this.style.background='#FFF8E8'" onmouseout="this.style.background='#FFFDF5'">
+      <div style="color:rgba(255,153,31,.4);font-size:12px">└</div>
+      <div style="font-size:13px;font-weight:600">{{ d.name }}</div>
+      <div style="font-size:12px;color:var(--muted)">{{ d.registration_date|default:"—" }}</div>
+      <div style="font-size:12px;{% if d.days_until_expiry is not None and d.days_until_expiry <= 30 %}color:var(--red);font-weight:600{% elif d.days_until_expiry is not None and d.days_until_expiry <= 90 %}color:var(--amber);font-weight:600{% endif %}">{{ d.expiry_date|default:"—" }}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--blue)">${{ d.cost_usd|floatformat:0|default:"—" }}</div>
+      <div style="font-size:12px;color:var(--muted)">{{ d.last_payment_date|default:"—" }}</div>
+      <div style="font-size:12px;color:var(--muted)">{{ d.last_payment_by|default:"—" }}</div>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        {% include "components/status_badge.html" with status=d.status %}
+        {% if user.is_editor %}
+        <a href="{% url 'domain_edit' d.pk %}" class="dl-btn" style="font-size:10px;padding:2px 5px">✎</a>
+        <a href="{% url 'domain_payment' d.pk %}" class="dl-btn" style="font-size:10px;padding:2px 5px">$</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="empty-state">Нет доменов для выбранного объекта</div>
+{% endfor %}
+
+<div class="sec-hd" style="margin-top:8px">
+  <div class="sec-title"><div class="sec-dot" style="background:var(--blue)"></div>Все домены — сводная таблица</div>
+</div>
+<div class="tbl-wrap">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Домен</th><th>Объект</th><th>Регистратор</th><th>Регистрация</th>
+        <th>Истечение</th><th>$/год</th><th>Последний платёж</th><th>Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for d in domains %}
+    <tr>
+      <td class="td-fw">{{ d.name }}</td>
+      <td><span class="pill p-purple">{{ d.site.name }}</span></td>
+      <td class="td-m">{{ d.registrar.name|default:"—" }}</td>
+      <td class="td-m">{{ d.registration_date|default:"—" }}</td>
+      <td class="{% if d.days_until_expiry is not None and d.days_until_expiry <= 30 %}td-exp{% endif %}">{{ d.expiry_date|default:"—" }}</td>
+      <td style="color:var(--blue);font-weight:600">${{ d.cost_usd|floatformat:0|default:"—" }}</td>
+      <td class="td-m">{{ d.last_payment_date|default:"—" }}{% if d.last_payment_by %} · {{ d.last_payment_by }}{% endif %}</td>
+      <td>{% include "components/status_badge.html" with status=d.status %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" class="empty-state">Нет доменов</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const openDns = new Set();
+function toggleDns(id) {
+  const card = document.getElementById('dns-'+id);
+  const cw   = document.getElementById('dw-'+id);
+  if (!cw) return;
+  if (openDns.has(id)) {
+    openDns.delete(id); card.classList.remove('is-open'); cw.style.maxHeight = '0';
+  } else {
+    openDns.add(id); card.classList.add('is-open'); cw.style.maxHeight = cw.scrollHeight + 100 + 'px';
+  }
+}
+</script>
+{% endblock %}

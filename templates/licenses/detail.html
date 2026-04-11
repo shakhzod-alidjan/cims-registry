@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ license.app.name }} — Лицензия{% endblock %}
+{% block nav_licenses %}on{% endblock %}
+{% block breadcrumb %}Лицензии › {{ license.app.name }}{% endblock %}
+
+{% block content %}
+<div class="pg-hd" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+  <div>
+    <div class="pg-title">{{ license.app.name }}</div>
+    <div class="pg-meta">{{ license.get_license_type_display }} · {{ license.site.name }}</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    {% if user.is_editor %}
+    <a href="{% url 'license_edit' license.pk %}" class="btn btn-d btn-sm">Редактировать</a>
+    {% endif %}
+    {% if user.is_admin %}
+    <form method="post" action="{% url 'license_delete' license.pk %}" style="display:inline" onsubmit="return confirm('Удалить лицензию?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid #FFBDAD">Удалить</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;max-width:960px">
+  <div class="tbl-wrap" style="margin-bottom:0">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);font-size:13px;font-weight:600">Основная информация</div>
+    {% for label, value in rows %}
+    <div style="display:flex;padding:11px 16px;border-bottom:1px solid var(--bdr);font-size:13px">
+      <div style="color:var(--muted);min-width:180px;flex-shrink:0">{{ label }}</div>
+      <div style="font-weight:500">{{ value|default:"—" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div>
+    <div class="kpi" style="--kc:{% if license.status == 'expired' %}#BF2600{% elif license.status == 'expiring_soon' %}#974F0C{% else %}#006652{% endif %};margin-bottom:12px">
+      <div class="kpi-l">Статус</div>
+      <div class="kpi-v" style="font-size:18px">{% include "components/status_badge.html" with status=license.status %}</div>
+      {% if license.days_until_expiry is not None %}
+      <div class="kpi-n">{% if license.days_until_expiry <= 0 %}Истекла {{ license.expiry_date }}{% else %}{{ license.days_until_expiry }} дней до истечения{% endif %}</div>
+      {% endif %}
+    </div>
+
+    {% if license.total_cost %}
+    <div class="kpi" style="--kc:#006652">
+      <div class="kpi-l">Стоимость</div>
+      <div class="kpi-v" style="color:var(--teal)">${{ license.total_cost|floatformat:0 }}</div>
+      <div class="kpi-n">{{ license.quantity_total }} × ${{ license.price_per_unit|floatformat:0 }}</div>
+    </div>
+    {% endif %}
+
+    {% if license.contract_file %}
+    <div class="tbl-wrap" style="margin-top:12px;margin-bottom:0;padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">Документы</div>
+      <a href="{{ license.contract_file.url }}" class="btn btn-d btn-sm" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+        Скачать договор
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

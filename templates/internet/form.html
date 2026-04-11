@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — IT Registry{% endblock %}
+{% block nav_internet %}on{% endblock %}
+{% block breadcrumb %}Интернет и связь › {{ title }}{% endblock %}
+{% block content %}
+<div class="pg-hd"><div class="pg-title">{{ title }}</div></div>
+<div style="max-width:680px">
+  <div class="tbl-wrap" style="padding:24px 28px">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label" style="font-size:12px;font-weight:600;color:var(--txt2);display:block;margin-bottom:5px">
+          {{ field.label }}{% if field.field.required %} *{% endif %}
+        </label>
+        {{ field }}
+        {% if field.errors %}<div style="font-size:12px;color:var(--red);margin-top:4px">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex;gap:8px;margin-top:24px;padding-top:16px;border-top:1px solid var(--bdr)">
+        <button type="submit" class="btn btn-p">Сохранить</button>
+        <a href="{% url 'isp_list' %}" class="btn btn-d">Отмена</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

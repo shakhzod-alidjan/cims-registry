@@ -1,0 +1,9 @@
+{% if status == 'expired' %}
+  <span class="sdot s-exp">Истёк</span>
+{% elif status == 'expiring_soon' %}
+  <span class="sdot s-exp">⚠ Скоро</span>
+{% elif status == 'expiring' %}
+  <span class="sdot s-warn">Внимание</span>
+{% else %}
+  <span class="sdot s-ok">Активна</span>
+{% endif %}
