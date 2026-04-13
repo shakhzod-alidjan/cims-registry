@@ -33,3 +33,10 @@ class ISPContractAdmin(admin.ModelAdmin):
             return format_html('<span style="color:#974F0C;font-weight:600">⚠ Скоро</span>')
         return format_html('<span style="color:#006644;font-weight:600">Активен</span>')
     status_badge.short_description = 'Статус'
+
+from .models import ServiceType
+
+@admin.register(ServiceType)
+class ServiceTypeAdmin(admin.ModelAdmin):
+    list_display  = ('name', 'ordering')
+    list_editable = ('ordering',)
