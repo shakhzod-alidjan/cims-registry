@@ -22,7 +22,7 @@
   <div class="kpi" style="--kc:#006652"><div class="kpi-l">Операторов</div><div class="kpi-v">{{ operators_list|length }}</div></div>
   <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Договоров</div><div class="kpi-v">{{ total }}</div></div>
   <div class="kpi" style="--kc:#BF2600"><div class="kpi-l">Истекли</div><div class="kpi-v" style="color:var(--red)">{{ expired }}</div></div>
-  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Итого / мес</div><div class="kpi-v" style="font-size:16px;color:var(--teal)">{{ total_monthly_uzs|floatformat:0 }} UZS</div></div>
+  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Итого / мес</div><div class="kpi-v" style="font-size:16px;color:var(--teal)">{{ total_monthly_uzs|floatformat:"0g" }} UZS</div></div>
 </div>
 
 <div class="sec-hd">
@@ -38,7 +38,7 @@
       <div class="op-name">{{ op_data.name }}</div>
       <div class="op-hint">{{ op_data.contracts|length }} услуг · {{ op_data.site_names }}</div>
       {% if op_data.total_uzs %}
-      <div class="op-cost">{{ op_data.total_uzs|floatformat:0 }} <span>UZS/мес</span></div>
+      <div class="op-cost">{{ op_data.total_uzs|floatformat:"0g" }} <span>UZS/мес</span></div>
       {% endif %}
       <div class="op-tags" style="margin-top:8px">
         {% for c in op_data.contracts %}
@@ -79,10 +79,16 @@
         {% endif %}
         <div><div class="svc-fl">Оплата</div><div class="svc-fv">{{ c.payment_method|default:"—" }}</div></div>
         {% if c.next_payment %}<div><div class="svc-fl">След. оплата</div><div class="svc-fv">{{ c.next_payment }}</div></div>{% endif %}
-        {% if c.cost_uzs %}
+        {% if c.cost or c.cost_uzs %}
         <div style="grid-column:1/-1">
           <div class="svc-fl">Стоимость / мес</div>
-          <div class="svc-fv cost">{{ c.cost_uzs|floatformat:0 }} UZS</div>
+          <div class="svc-fv cost">
+            {% if c.cost %}
+              {{ c.cost|floatformat:"0g" }} {{ c.currency }}
+            {% elif c.cost_uzs %}
+              {{ c.cost_uzs|floatformat:"0g" }} UZS
+            {% endif %}
+          </div>
         </div>
         {% endif %}
       </div>
@@ -114,7 +120,11 @@
       <td><span class="pill p-teal">{{ c.operator.name|default:"—" }}</span></td>
       <td><span class="pill p-blue">{{ c.site.name }}</span></td>
       <td style="font-weight:600">{{ c.speed|default:"—" }}</td>
-      <td class="td-cost">{% if c.cost_uzs %}{{ c.cost_uzs|floatformat:0 }} UZS{% else %}—{% endif %}</td>
+      <td class="td-cost">
+        {% if c.cost %}{{ c.cost|floatformat:"0g" }} {{ c.currency }}
+        {% elif c.cost_uzs %}{{ c.cost_uzs|floatformat:"0g" }} UZS
+        {% else %}—{% endif %}
+      </td>
       <td class="{% if c.status == 'expired' %}td-exp{% endif %}">{{ c.end_date|default:"—" }}</td>
       <td>{% include "components/status_badge.html" with status=c.status %}</td>
       {% if user.is_editor %}
@@ -135,13 +145,13 @@
 <div class="tot-banner">
   {% for op_data in operators_list %}
   {% if op_data.total_uzs %}
-  <div class="tot-item"><div class="tot-lbl">{{ op_data.name }} / мес</div><div class="tot-val">{{ op_data.total_uzs|floatformat:0 }} UZS</div></div>
+  <div class="tot-item"><div class="tot-lbl">{{ op_data.name }} / мес</div><div class="tot-val">{{ op_data.total_uzs|floatformat:"0g" }} UZS</div></div>
   <div class="tot-div"></div>
   {% endif %}
   {% endfor %}
-  <div class="tot-item tot-main"><div class="tot-lbl">Итого / месяц</div><div class="tot-val">{{ total_monthly_uzs|floatformat:0 }} UZS</div></div>
+  <div class="tot-item tot-main"><div class="tot-lbl">Итого / месяц</div><div class="tot-val">{{ total_monthly_uzs|floatformat:"0g" }} UZS</div></div>
   <div class="tot-div"></div>
-  <div class="tot-item"><div class="tot-lbl">В год</div><div class="tot-val">{{ total_annual_uzs|floatformat:0 }} UZS</div></div>
+  <div class="tot-item"><div class="tot-lbl">В год</div><div class="tot-val">{{ total_annual_uzs|floatformat:"0g" }} UZS</div></div>
 </div>
 {% endif %}
 {% endblock %}
