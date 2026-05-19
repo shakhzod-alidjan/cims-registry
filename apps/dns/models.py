@@ -32,6 +32,7 @@ class Domain(models.Model):
     # legacy field kept for migration compatibility
     cost_usd          = models.DecimalField('Стоимость / год (USD)', max_digits=8, decimal_places=2,
                                             null=True, blank=True)
+    contract_file    = models.FileField('Файл договора', upload_to='contracts/domains/', blank=True)
     auto_renewal      = models.BooleanField('Авто-продление', default=False)
     notes             = models.TextField('Примечания', blank=True)
     created_at        = models.DateTimeField(auto_now_add=True)
