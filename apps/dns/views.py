@@ -129,3 +129,17 @@ def domain_payment(request, pk):
         from .forms import DomainPaymentForm
         form = DomainPaymentForm()
     return render(request, 'dns/payment_form.html', {'form': form, 'domain': domain})
+
+@login_required
+def export_dns_xlsx(request):
+    import openpyxl
+    from apps.core.exports import build_dns_sheet, workbook_response
+    sf    = _sf(request)
+    site  = getattr(request, 'current_site', None)
+    label = site.name if site else 'Все объекты'
+    domains = Domain.objects.filter(**sf)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Домены"
+    build_dns_sheet(ws, domains, label)
+    return workbook_response(wb, "dns")

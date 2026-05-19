@@ -112,3 +112,17 @@ def isp_delete(request, pk):
     get_object_or_404(ISPContract, pk=pk).delete()
     messages.success(request, 'Договор удалён')
     return redirect('isp_list')
+
+@login_required
+def export_isp_xlsx(request):
+    import openpyxl
+    from apps.core.exports import build_isp_sheet, workbook_response
+    sf    = _sf(request)
+    site  = getattr(request, 'current_site', None)
+    label = site.name if site else 'Все объекты'
+    contracts = ISPContract.objects.filter(**sf)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Интернет"
+    build_isp_sheet(ws, contracts, label)
+    return workbook_response(wb, "internet")

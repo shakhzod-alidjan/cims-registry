@@ -105,3 +105,17 @@ def server_delete(request, pk):
     get_object_or_404(CloudServer, pk=pk).delete()
     messages.success(request, 'Сервер удалён')
     return redirect('cloud_list')
+
+@login_required
+def export_cloud_xlsx(request):
+    import openpyxl
+    from apps.core.exports import build_cloud_sheet, workbook_response
+    sf    = _sf(request)
+    site  = getattr(request, 'current_site', None)
+    label = site.name if site else 'Все объекты'
+    servers = CloudServer.objects.filter(**sf)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Cloud серверы"
+    build_cloud_sheet(ws, servers, label)
+    return workbook_response(wb, "cloud")

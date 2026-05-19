@@ -6,13 +6,11 @@ register = template.Library()
 
 @register.filter
 def split(value, sep=','):
-    """{{ "a,b,c"|split:"," }} → ['a','b','c']"""
     return value.split(sep)
 
 
 @register.simple_tag
 def days_left(date):
-    """Return days left until date, or None."""
     if not date:
         return None
     return (date - timezone.now().date()).days
@@ -30,7 +28,6 @@ def status_color(status):
 
 @register.filter
 def uzs_millions(value):
-    """Format UZS as millions: 3 900 000 → 3.9 млн"""
     try:
         v = float(value)
         if v >= 1_000_000:
@@ -42,7 +39,6 @@ def uzs_millions(value):
 
 @register.filter
 def expiry_class(days):
-    """Return CSS class based on days_until_expiry value."""
     if days is None:
         return ''
     if days <= 0:
@@ -56,7 +52,6 @@ def expiry_class(days):
 
 @register.filter
 def expiry_label(days):
-    """Return human-readable expiry label."""
     if days is None:
         return '—'
     if days <= 0:
@@ -66,7 +61,6 @@ def expiry_label(days):
 
 @register.filter
 def expiry_pill_class(days):
-    """Return pill CSS class based on days."""
     if days is None:
         return 'p-green'
     if days <= 0:
@@ -88,7 +82,6 @@ def can_admin(user):
 
 @register.filter
 def currency(value, prefix='$'):
-    """Format number as currency: 42000 → $42,000"""
     try:
         return f'{prefix}{float(value):,.0f}'
     except (TypeError, ValueError):
@@ -97,8 +90,19 @@ def currency(value, prefix='$'):
 
 @register.filter
 def mul(value, arg):
-    """Multiply: {{ value|mul:12 }}"""
     try:
         return float(value) * float(arg)
     except (TypeError, ValueError):
         return 0
+
+
+@register.filter
+def intcomma(value):
+    """847611 → 847,611"""
+    try:
+        v = float(value)
+        if v == int(v):
+            return f'{int(v):,}'
+        return f'{v:,.2f}'
+    except (TypeError, ValueError):
+        return value or '—'

@@ -58,12 +58,10 @@ def license_list(request):
         worst_status = 'active'
 
         for lic in lics:
-            # Cost in USD
             price_usd = lic.get_price_usd(usd_rate)
             if price_usd and lic.quantity_total:
                 app_cost_usd += price_usd * lic.quantity_total
 
-            # Status
             if lic.status == 'expired':
                 expired_count += 1
                 worst_status = 'expired'
@@ -72,7 +70,6 @@ def license_list(request):
             elif lic.status == 'active' and worst_status == 'active':
                 active_count += 1
 
-            # Worst expiry
             d = lic.days_until_expiry
             if d is not None and (worst_days is None or d < worst_days):
                 worst_days = d
@@ -82,25 +79,25 @@ def license_list(request):
         total_cost_uzs += app_cost_usd * usd_rate
 
         grouped.append({
-            'app':           app,
-            'licenses':      lics,
+            'app':            app,
+            'licenses':       lics,
             'total_cost_usd': app_cost_usd,
             'total_cost_uzs': app_cost_usd * usd_rate,
-            'worst_days':    worst_days,
-            'worst_expiry':  worst_expiry,
-            'worst_status':  worst_status,
+            'worst_days':     worst_days,
+            'worst_expiry':   worst_expiry,
+            'worst_status':   worst_status,
         })
 
     ctx = {
-        'grouped':        grouped,
-        'total_apps':     len(grouped),
-        'total_records':  sum(item['licenses'].count() for item in grouped),
+        'grouped':       grouped,
+        'total_apps':    len(grouped),
+        'total_records': sum(item['licenses'].count() for item in grouped),
         'total_cost_usd': total_cost_usd,
         'total_cost_uzs': total_cost_uzs,
-        'active_count':   active_count,
-        'expired_count':  expired_count,
-        'filter_tag':     filter_tag,
-        'usd_rate':       usd_rate,
+        'active_count':  active_count,
+        'expired_count': expired_count,
+        'filter_tag':    filter_tag,
+        'usd_rate':      usd_rate,
     }
     return render(request, 'licenses/list.html', ctx)
 
@@ -182,12 +179,16 @@ def license_delete(request, pk):
 
 
 @login_required
-def export_excel(request):
-    from apps.notifications.tasks import export_licenses_to_excel
-    site = getattr(request, 'current_site', None)
-    export_licenses_to_excel.delay(
-        site_id=site.id if site else None,
-        user_email=request.user.email,
-    )
-    messages.success(request, 'Экспорт запущен — файл придёт на email')
-    return redirect('license_list')
+def export_licenses_xlsx(request):
+    import openpyxl
+    from apps.core.exports import build_licenses_sheet, workbook_response
+    sf    = _site_filter(request)
+    usd   = _get_usd_rate()
+    lics  = License.objects.filter(**sf).select_related('app', 'app__vendor', 'site')
+    site  = getattr(request, 'current_site', None)
+    label = site.name if site else 'Все объекты'
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Лицензии"
+    build_licenses_sheet(ws, lics, usd, label)
+    return workbook_response(wb, "licenses")
