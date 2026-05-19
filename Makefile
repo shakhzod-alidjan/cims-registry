@@ -1,5 +1,5 @@
 .PHONY: help build up down logs shell migrate superuser import static test
-
+#TEST
 help:
 	@echo "IT Registry — команды управления"
 	@echo ""
