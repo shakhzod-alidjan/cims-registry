@@ -8,7 +8,7 @@
 {% if user.is_editor %}
 <a href="{% url 'license_add' %}" class="btn btn-p">+ Добавить</a>
 {% endif %}
-<a href="{% url 'license_export' %}" class="btn btn-d btn-sm">Экспорт Excel</a>
+<a href="{% url 'license_export_xlsx' %}" class="btn btn-d btn-sm">⬇ Экспорт xlsx</a>
 {% endblock %}
 
 {% block content %}
@@ -21,7 +21,7 @@
   <div class="kpi" style="--kc:#0052CC"><div class="kpi-l">Приложений</div><div class="kpi-v">{{ total_apps }}</div><div class="kpi-n">{{ total_records }} лицензий</div></div>
   <div class="kpi" style="--kc:#006644"><div class="kpi-l">Активных</div><div class="kpi-v" style="color:var(--green)">{{ active_count }}</div><div class="kpi-n">в норме</div></div>
   <div class="kpi" style="--kc:#BF2600"><div class="kpi-l">Истекли</div><div class="kpi-v" style="color:var(--red)">{{ expired_count }}</div><div class="kpi-n">продления</div></div>
-  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Итого / год</div><div class="kpi-v" style="font-size:16px">${{ total_cost_usd|floatformat:0 }}</div><div class="kpi-n">{{ total_cost_uzs|floatformat:0 }} UZS</div></div>
+  <div class="kpi" style="--kc:#974F0C"><div class="kpi-l">Итого / год</div><div class="kpi-v" style="font-size:16px">${{ total_cost_usd|intcomma }}</div><div class="kpi-n">{{ total_cost_uzs|intcomma }} UZS</div></div>
 </div>
 
 <div class="sec-hd">
@@ -93,10 +93,10 @@
       </div>
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--blue)">
-          {% if item.total_cost_usd %}${{ item.total_cost_usd|floatformat:0 }}{% else %}—{% endif %}
+          {% if item.total_cost_usd %}${{ item.total_cost_usd|intcomma }}{% else %}—{% endif %}
         </div>
         {% if item.total_cost_uzs %}
-        <div style="font-size:10px;color:var(--muted)">{{ item.total_cost_uzs|floatformat:0 }} UZS</div>
+        <div style="font-size:10px;color:var(--muted)">{{ item.total_cost_uzs|intcomma }} UZS</div>
         {% endif %}
       </div>
       <div>
@@ -126,8 +126,8 @@
         <div><span class="pill p-gray" style="font-size:10px">{{ lic.currency }}</span></div>
         <div>
           {% if lic.total_cost %}
-          <div style="font-size:12px;font-weight:600;color:var(--blue)">{{ lic.total_cost|floatformat:0 }} {{ lic.currency }}</div>
-          {% if lic.price_per_unit %}<div style="font-size:10px;color:var(--muted)">{{ lic.price_per_unit|floatformat:0 }} × {{ lic.quantity_total }}</div>{% endif %}
+          <div style="font-size:12px;font-weight:600;color:var(--blue)">{{ lic.total_cost|intcomma }} {{ lic.currency }}</div>
+          {% if lic.price_per_unit %}<div style="font-size:10px;color:var(--muted)">{{ lic.price_per_unit|intcomma }} × {{ lic.quantity_total }}</div>{% endif %}
           {% else %}—{% endif %}
         </div>
         <div>
