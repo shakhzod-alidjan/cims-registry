@@ -22,6 +22,9 @@ pandas==2.2.3
 # Notifications
 requests==2.32.3
 
+# AI
+openai>=1.0.0
+
 # Utils
 Pillow==11.0.0
 django-cors-headers==4.6.0

@@ -83,3 +83,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 4000);
   });
 });
+
+/* ── AI SEARCH ───────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
+  const inp   = document.getElementById('ai-search-inp');
+  const panel = document.getElementById('ai-srch-panel');
+  const body  = document.getElementById('ai-srch-body');
+  const wrap  = document.getElementById('ai-srch-wrap');
+  if (!inp) return;
+
+  let timer = null;
+
+  inp.addEventListener('input', function() {
+    clearTimeout(timer);
+    const q = inp.value.trim();
+    if (q.length < 2) { panel.style.display = 'none'; return; }
+
+    body.textContent = '⏳ Думаю...';
+    panel.style.display = 'block';
+
+    timer = setTimeout(function() {
+      fetch('/ai-search/?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          body.textContent = data.answer || 'Ничего не найдено.';
+        })
+        .catch(function() { body.textContent = 'Ошибка поиска.'; });
+    }, 600);
+  });
+
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { panel.style.display = 'none'; inp.value = ''; }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (wrap && !wrap.contains(e.target)) panel.style.display = 'none';
+  });
+});

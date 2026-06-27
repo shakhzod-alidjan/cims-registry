@@ -140,6 +140,7 @@ def send_weekly_summary(self):
     from apps.licenses.models import License
     from apps.dns.models import Domain
     from apps.internet.models import ISPContract
+    from apps.core.ai import generate_weekly_summary
     today = timezone.now().date()
     deadline = today + timezone.timedelta(days=90)
 
@@ -147,21 +148,25 @@ def send_weekly_summary(self):
     exp_dom = Domain.objects.filter(expiry_date__isnull=False, expiry_date__lte=deadline).count()
     exp_isp = ISPContract.objects.filter(end_date__isnull=False, end_date__lte=deadline).count()
 
+    ai_text = generate_weekly_summary(exp_lic, exp_dom, exp_isp)
+
     subject = f'📊 IT Registry — Еженедельный отчёт ({today})'
     body = (
         f'Сводка на {today}:\n\n'
-        f'Лицензии истекают ≤90 дней:   {exp_lic}\n'
-        f'Домены истекают ≤90 дней:      {exp_dom}\n'
-        f'Договоры ISP истекают ≤90 дней:{exp_isp}\n\n'
-        f'Открыть: {settings.SITE_URL}'
+        f'Лицензии истекают ≤90 дней:    {exp_lic}\n'
+        f'Домены истекают ≤90 дней:       {exp_dom}\n'
+        f'Договоры ISP истекают ≤90 дней: {exp_isp}\n\n'
+        + (f'── AI-анализ ──\n{ai_text}\n\n' if ai_text else '')
+        + f'Открыть: {settings.SITE_URL}'
     )
     tg_msg = (
         f'📊 <b>IT Registry — Еженедельный отчёт</b>\n'
         f'📅 {today}\n\n'
         f'⚠️ Лицензий истекает: <b>{exp_lic}</b>\n'
         f'🌐 Доменов истекает: <b>{exp_dom}</b>\n'
-        f'📡 Договоров ISP: <b>{exp_isp}</b>\n\n'
-        f'<a href="{settings.SITE_URL}">Открыть IT Registry</a>'
+        f'📡 Договоров ISP: <b>{exp_isp}</b>\n'
+        + (f'\n🤖 <i>{ai_text}</i>\n' if ai_text else '\n')
+        + f'\n<a href="{settings.SITE_URL}">Открыть IT Registry</a>'
     )
 
     emails = [settings.ADMIN_EMAIL] if settings.ADMIN_EMAIL else []

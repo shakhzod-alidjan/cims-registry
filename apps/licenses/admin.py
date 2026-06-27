@@ -27,6 +27,9 @@ class BusinessAppAdmin(admin.ModelAdmin):
     filter_horizontal = ('sites',)
     inlines = [LicenseInline]
 
+    class Media:
+        js = ('js/admin_ai.js',)
+
     def sites_list(self, obj):
         return ', '.join(s.name for s in obj.sites.all())
     sites_list.short_description = 'Объекты'

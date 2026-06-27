@@ -177,3 +177,8 @@ if not DEBUG:
     # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 CSRF_TRUSTED_ORIGINS = ['https://cims.multinationalminegroup.com', 'http://172.16.15.1']
+
+# ── AI (Qwen) ────────────────────────────────────────────────
+QWEN_API_KEY  = config('QWEN_API_KEY', default='')
+QWEN_BASE_URL = config('QWEN_BASE_URL', default='https://dashscope.aliyuncs.com/compatible-mode/v1')
+QWEN_MODEL    = config('QWEN_MODEL', default='qwen-turbo')

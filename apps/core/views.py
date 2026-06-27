@@ -149,6 +149,57 @@ def dashboard(request):
 
 
 @login_required
+def ai_search(request):
+    q = request.GET.get('q', '').strip()
+    if not q or len(q) < 2:
+        return JsonResponse({'answer': '', 'query': q})
+
+    site = request.current_site
+    accessible_ids = [s.id for s in request.user.get_accessible_sites()]
+    sf = {'site_id': site.id} if site else {'site_id__in': accessible_ids}
+
+    from apps.licenses.models import License
+    from apps.dns.models import Domain
+    from apps.internet.models import ISPContract
+    from apps.cloud.models import CloudServer
+    from apps.core.ai import search_assets
+
+    parts = []
+
+    lics = License.objects.filter(**sf).select_related('app', 'site', 'app__vendor')[:80]
+    if lics.exists():
+        rows = [
+            f"  {l.app.name} | {l.site.name} | {l.get_license_type_display()} | статус={l.status} | истечение={l.expiry_date or 'бессрочно'}"
+            for l in lics
+        ]
+        parts.append("=== ЛИЦЕНЗИИ ===\n" + '\n'.join(rows))
+
+    doms = Domain.objects.filter(**sf).select_related('site', 'registrar')[:50]
+    if doms.exists():
+        rows = [f"  {d.name} | {d.site.name} | регистратор={d.registrar or '—'} | истечение={d.expiry_date}" for d in doms]
+        parts.append("=== ДОМЕНЫ ===\n" + '\n'.join(rows))
+
+    isps = ISPContract.objects.filter(**sf).select_related('site', 'operator')[:50]
+    if isps.exists():
+        rows = [f"  {c.service_name} | {c.operator} | {c.site.name} | статус={c.status} | окончание={c.end_date or '—'}" for c in isps]
+        parts.append("=== ИНТЕРНЕТ / ISP ===\n" + '\n'.join(rows))
+
+    clouds = CloudServer.objects.filter(**sf).select_related('site', 'provider')[:50]
+    if clouds.exists():
+        rows = [f"  {s.name} | {s.provider} | {s.site.name} | {s.get_status_display()} | назначение={s.purpose or '—'}" for s in clouds]
+        parts.append("=== CLOUD ===\n" + '\n'.join(rows))
+
+    if not parts:
+        return JsonResponse({'answer': 'Данных нет.', 'query': q})
+
+    answer = search_assets(q, '\n\n'.join(parts))
+    if not answer:
+        answer = 'AI недоступен. Укажите QWEN_API_KEY в настройках.'
+
+    return JsonResponse({'answer': answer, 'query': q})
+
+
+@login_required
 @require_POST
 def switch_site(request):
     site_id = request.POST.get('site_id')

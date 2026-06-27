@@ -179,6 +179,19 @@ def license_delete(request, pk):
 
 
 @login_required
+def suggest_category_ajax(request):
+    name   = request.GET.get('name', '').strip()
+    vendor = request.GET.get('vendor', '').strip()
+    if not name:
+        return JsonResponse({'error': 'name required'}, status=400)
+    from apps.core.ai import suggest_category
+    from .models import BusinessApp
+    category = suggest_category(name, vendor)
+    label = dict(BusinessApp.CATEGORY_CHOICES).get(category, category)
+    return JsonResponse({'category': category, 'label': label})
+
+
+@login_required
 def export_licenses_xlsx(request):
     import openpyxl
     from apps.core.exports import build_licenses_sheet, workbook_response

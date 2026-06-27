@@ -110,9 +110,15 @@
     </div>
 
     <div class="topbar-r">
-      <div class="srch">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="var(--hint)" stroke-width="1.8"/><path d="M15 15l-3.5-3.5" stroke="var(--hint)" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <input type="text" placeholder="Поиск...">
+      <div style="position:relative" id="ai-srch-wrap">
+        <div class="srch">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="var(--hint)" stroke-width="1.8"/><path d="M15 15l-3.5-3.5" stroke="var(--hint)" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" id="ai-search-inp" placeholder="AI Поиск..." autocomplete="off">
+        </div>
+        <div id="ai-srch-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:360px;max-width:480px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.13);z-index:999;padding:14px 16px;font-size:13px;line-height:1.65;color:var(--txt1);white-space:pre-wrap;word-break:break-word">
+          <div style="font-size:10px;font-weight:600;color:var(--hint);letter-spacing:.05em;margin-bottom:8px">🤖 AI ПОИСК</div>
+          <div id="ai-srch-body"></div>
+        </div>
       </div>
       {% block topbar_action %}{% endblock %}
       <a href="{% url 'logout' %}" class="btn btn-d btn-sm">Выйти</a>
