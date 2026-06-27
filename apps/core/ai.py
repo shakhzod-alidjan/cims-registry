@@ -12,10 +12,10 @@ def ask_qwen(prompt: str, system: str = "", model: str = None) -> str:
         from openai import OpenAI
         client = OpenAI(
             api_key=api_key,
-            base_url=getattr(settings, 'QWEN_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1'),
+            base_url=settings.QWEN_BASE_URL,
         )
         resp = client.chat.completions.create(
-            model=model or getattr(settings, 'QWEN_MODEL', 'qwen-turbo'),
+            model=model or settings.QWEN_MODEL,
             messages=[
                 {"role": "system", "content": system or "Ты помощник IT-отдела компании. Отвечай кратко и по делу на русском языке."},
                 {"role": "user",   "content": prompt},
