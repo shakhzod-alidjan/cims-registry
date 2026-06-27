@@ -169,24 +169,38 @@ def ai_search(request):
     lics = License.objects.filter(**sf).select_related('app', 'site', 'app__vendor')[:80]
     if lics.exists():
         rows = [
-            f"  {l.app.name} | {l.site.name} | {l.get_license_type_display()} | статус={l.status} | истечение={l.expiry_date or 'бессрочно'}"
+            f"  {l.app.name} | {l.site.name} | {l.get_license_type_display()} | "
+            f"кол-во={l.quantity_total or '—'} | цена={l.price_per_unit or '—'} {l.currency} | "
+            f"итого={l.total_cost or '—'} {l.currency} | статус={l.status} | истечение={l.expiry_date or 'бессрочно'}"
             for l in lics
         ]
         parts.append("=== ЛИЦЕНЗИИ ===\n" + '\n'.join(rows))
 
     doms = Domain.objects.filter(**sf).select_related('site', 'registrar')[:50]
     if doms.exists():
-        rows = [f"  {d.name} | {d.site.name} | регистратор={d.registrar or '—'} | истечение={d.expiry_date}" for d in doms]
+        rows = [
+            f"  {d.name} | {d.site.name} | регистратор={d.registrar or '—'} | "
+            f"стоимость/год={d.cost or '—'} {d.currency} | истечение={d.expiry_date}"
+            for d in doms
+        ]
         parts.append("=== ДОМЕНЫ ===\n" + '\n'.join(rows))
 
     isps = ISPContract.objects.filter(**sf).select_related('site', 'operator')[:50]
     if isps.exists():
-        rows = [f"  {c.service_name} | {c.operator} | {c.site.name} | статус={c.status} | окончание={c.end_date or '—'}" for c in isps]
+        rows = [
+            f"  {c.service_name} | {c.operator} | {c.site.name} | "
+            f"стоимость/мес={c.cost or '—'} {c.currency} | статус={c.status} | окончание={c.end_date or '—'}"
+            for c in isps
+        ]
         parts.append("=== ИНТЕРНЕТ / ISP ===\n" + '\n'.join(rows))
 
     clouds = CloudServer.objects.filter(**sf).select_related('site', 'provider')[:50]
     if clouds.exists():
-        rows = [f"  {s.name} | {s.provider} | {s.site.name} | {s.get_status_display()} | назначение={s.purpose or '—'}" for s in clouds]
+        rows = [
+            f"  {s.name} | {s.provider} | {s.site.name} | "
+            f"стоимость/мес={s.cost or '—'} {s.currency} | {s.get_status_display()} | назначение={s.purpose or '—'}"
+            for s in clouds
+        ]
         parts.append("=== CLOUD ===\n" + '\n'.join(rows))
 
     if not parts:
